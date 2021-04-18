@@ -16,6 +16,8 @@ import (
 func main() {
 
 	publicIP := flag.String("public-ip", "", "IP Address that TURN can be contacted by.")
+	minRange := flag.Int("min-range", 50000, "Min-range port")
+	maxRange := flag.Int("max-range", 55000, "Max-range port")
 	port := flag.Int("port", 3478, "Listening port.")
 	users := flag.String("users", "", "List of username and password (e.g. \"user=pass,user=pass\")")
 	realm := flag.String("realm", "pion.ly", "Realm (defaults to \"pion.ly\")")
@@ -60,8 +62,8 @@ func main() {
 				RelayAddressGenerator: &turn.RelayAddressGeneratorPortRange{
 					RelayAddress: net.ParseIP(*publicIP), // Claim that we are listening on IP passed by user (This should be your Public IP)
 					Address:      "0.0.0.0",              // But actually be listening on every interface
-					MinPort:      50000,
-					MaxPort:      55000,
+					MinPort:      uint16(*minRange),
+					MaxPort:      uint16(*maxRange),
 				},
 			},
 		},
