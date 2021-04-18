@@ -16,8 +16,9 @@ import (
 func main() {
 
 	publicIP := flag.String("public-ip", "", "IP Address that TURN can be contacted by.")
-	minRange := flag.Int("min-range", 50000, "Min-range port")
-	maxRange := flag.Int("max-range", 55000, "Max-range port")
+	minPort := flag.Int("min-port", 50000, "Min-range port")
+	maxPort := flag.Int("max-port", 55000, "Max-range port")
+	noAuth := flag.Bool("no-auth", false, "No authentication enabled")
 	port := flag.Int("port", 3478, "Listening port.")
 	users := flag.String("users", "", "List of username and password (e.g. \"user=pass,user=pass\")")
 	realm := flag.String("realm", "pion.ly", "Realm (defaults to \"pion.ly\")")
@@ -40,8 +41,10 @@ func main() {
 	// Cache -users flag for easy lookup later
 	// If passwords are stored they should be saved to your DB hashed using turn.GenerateAuthKey
 	usersMap := map[string][]byte{}
-	for _, kv := range regexp.MustCompile(`(\w+)=(\w+)`).FindAllStringSubmatch(*users, -1) {
-		usersMap[kv[1]] = turn.GenerateAuthKey(kv[1], *realm, kv[2])
+	if *noAuth {
+		for _, kv := range regexp.MustCompile(`(\w+)=(\w+)`).FindAllStringSubmatch(*users, -1) {
+			usersMap[kv[1]] = turn.GenerateAuthKey(kv[1], *realm, kv[2])
+		}
 	}
 
 	s, err := turn.NewServer(turn.ServerConfig{
@@ -50,6 +53,9 @@ func main() {
 		// This is called everytime a user tries to authenticate with the TURN server
 		// Return the key for that user, or false when no user is found
 		AuthHandler: func(username string, realm string, srcAddr net.Addr) ([]byte, bool) {
+			if *noAuth {
+				return nil, true
+			}
 			if key, ok := usersMap[username]; ok {
 				return key, true
 			}
@@ -62,8 +68,8 @@ func main() {
 				RelayAddressGenerator: &turn.RelayAddressGeneratorPortRange{
 					RelayAddress: net.ParseIP(*publicIP), // Claim that we are listening on IP passed by user (This should be your Public IP)
 					Address:      "0.0.0.0",              // But actually be listening on every interface
-					MinPort:      uint16(*minRange),
-					MaxPort:      uint16(*maxRange),
+					MinPort:      uint16(*minPort),
+					MaxPort:      uint16(*maxPort),
 				},
 			},
 		},
