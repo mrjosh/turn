@@ -26,8 +26,6 @@ func main() {
 
 	if len(*publicIP) == 0 {
 		log.Fatalf("'public-ip' is required")
-	} else if len(*users) == 0 {
-		log.Fatalf("'users' is required")
 	}
 
 	// Create a UDP listener to pass into pion/turn
